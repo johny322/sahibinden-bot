@@ -1,5 +1,6 @@
 import json
 import platform
+import random
 import time
 import traceback
 from dataclasses import dataclass
@@ -28,6 +29,7 @@ class AlertMessage:
     cookies_error = 'cookies_error'
     need_cookies = 'need_cookies'
     other_error = 'other_error'
+    block_ip = 'block_ip'
 
 
 class NoProxyError(Exception):
@@ -154,6 +156,7 @@ class SahibindenParser:
         town = context['town']
 
         self.driver.get(post_url)
+        self._random_sleep()
         source = self.driver.page_source
         soup = BeautifulSoup(source, 'lxml')
         seller_links = soup.find('ul', {'class': 'userLinks'}).find_all('li')
@@ -174,6 +177,7 @@ class SahibindenParser:
             if not seller_reviews_url.startswith('http'):
                 seller_reviews_url = 'https://www.sahibinden.com' + seller_reviews_url
             seller_reviews_count = self._get_seller_reviews(seller_reviews_url)
+            self._random_sleep()
         except AttributeError:
             seller_rating = None
             seller_reviews_count = None
@@ -182,6 +186,7 @@ class SahibindenParser:
             seller_posts_url = 'https://www.sahibinden.com' + seller_posts_url
         seller_id = seller_posts_url.split('userId=')[-1]
         seller_posts = self._get_seller_posts(seller_posts_url)
+        self._random_sleep()
         post = PostData(
             link=post_url,
             created=created,
@@ -218,6 +223,10 @@ class SahibindenParser:
             title = ''
         if 'login' in title:
             error_text = AlertMessage.need_cookies
+            self._append_error_alert(error_text)
+            return error_text
+        if 'Hata Sayfası' in title:
+            error_text = AlertMessage.block_ip
             self._append_error_alert(error_text)
             return error_text
         error_text = AlertMessage.other_error
@@ -303,13 +312,20 @@ class SahibindenParser:
         )
         return False
 
+    @staticmethod
+    def _random_sleep(sleep_time=None):
+        if sleep_time is not None:
+            time.sleep(sleep_time)
+        else:
+            time.sleep(random.uniform(0.5, 2))
+
     def parser(self, context: dict):
         url = context['url']
         first_pars = context.get('first_pars', False)
         logger.debug("get search url: {}", url)
         self.driver.get(url)
         while True:
-            time.sleep(0.1)
+            self._random_sleep(1)
             source = self.driver.page_source
             soup = BeautifulSoup(source, 'lxml')
             posts = soup.find('tbody', {'class': 'searchResultsRowClass'}).find_all('tr',
@@ -318,7 +334,7 @@ class SahibindenParser:
             logger.debug(f'{len(posts)=}')
             if first_pars:
                 posts = posts[::-1][:-4]
-            for post in posts[:3]:
+            for post in posts:
                 try:
                     post_id = post.get('data-id')
                     if self._skip_post(url, post_id):
@@ -398,9 +414,16 @@ class SahibindenParser:
                 logger.info(f'good login')
                 time.sleep(1)
                 for url in uniq_urls:
+                    url_parsers = Parser.select().where(Parser.url == url)
+                    first_pars_values = [url_parser.first_pars for url_parser in url_parsers]
+                    if all(first_pars_values):
+                        first_pars = True
+                    else:
+                        first_pars = False
                     # self.driver.get(url)
                     context = dict(
-                        url=url
+                        url=url,
+                        first_pars=first_pars
                     )
                     try:
                         self.parser(context)

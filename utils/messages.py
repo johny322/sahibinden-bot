@@ -52,6 +52,8 @@ async def send_post_messages():
 
 async def send_error_alert():
     alert = Alert.select().first()
+    if not alert:
+        return
     error_text = alert.message
 
     user_id = config.admin_ids[0]
