@@ -68,7 +68,7 @@ async def get_reg_date_handler(message: types.Message, state: FSMContext):
     if message.text == "no":
         await message.answer(
             text=texts.parse_seller_reviews,
-            reply_markup=no_count_markup()
+            reply_markup=no_count_markup
         )
         await state.update_data(reg_date=None)
         await state.set_state(ParserStates.seller_reviews)
