@@ -1,0 +1,14 @@
+[Unit]
+
+Description=My Script Service
+After=multi-user.target
+
+[Service]
+
+Type=idle
+WorkingDirectory=/root/botparser
+ExecStart=/root/botparser/venv/bin/python main.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
