@@ -1,13 +1,12 @@
 import asyncio
-from datetime import datetime
 
-from parsers.parsing import append_scheduler_job
-from routers import router
 from config import config, bot, dp, scheduler
-from utils.notify import notify_users
-from utils.logger import setup_logger
 from data.commands import base_commands
 from middleware.throttling import ThrottlingMiddleware
+from parsers.parsing import append_scheduler_job
+from routers import router
+from utils.logger import setup_logger
+from utils.notify import notify_users
 
 
 async def sleep_time():
@@ -18,7 +17,6 @@ async def sleep_time():
 
 async def on_startup(dispatcher, bot):
     scheduler.start()
-    # scheduler.add_job(sleep_time, 'date', run_date=datetime.now())
     append_scheduler_job()
     await bot.set_my_commands(commands=base_commands)
     await notify_users(bot, config.admin_ids)

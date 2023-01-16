@@ -206,27 +206,29 @@ class SahibindenParser:
         )
         return post
 
-    def _processing_error(self, error_text=None) -> str:
+    def _processing_error(self, error_text=None, write_alert=True) -> str:
         if error_text:
             self._append_error_alert(error_text)
             logger.warning(f'detected error: {error_text}')
             return error_text
-        current_url = self.driver.current_url
-        if 'login' in current_url:
-            error_text = AlertMessage.need_cookies
-            self._append_error_alert(error_text)
-            return error_text
+
         soup = BeautifulSoup(self.driver.page_source, 'lxml')
         try:
             title = soup.find('title').getText()
         except AttributeError:
             title = ''
+        error_footer = soup.find('div', {'id': 'qr-error-footer'})
+        if 'Hata Sayfası' in title or error_footer:
+            error_text = AlertMessage.block_ip
+            self._append_error_alert(error_text)
+            return error_text
         if 'login' in title:
             error_text = AlertMessage.need_cookies
             self._append_error_alert(error_text)
             return error_text
-        if 'Hata Sayfası' in title:
-            error_text = AlertMessage.block_ip
+        current_url = self.driver.current_url
+        if 'login' in current_url:
+            error_text = AlertMessage.need_cookies
             self._append_error_alert(error_text)
             return error_text
         error_text = AlertMessage.other_error
@@ -314,6 +316,9 @@ class SahibindenParser:
 
     @staticmethod
     def _random_sleep(sleep_time=None):
+        if sleep_time == 'long':
+            time.sleep(random.uniform(60, 120))
+            return
         if sleep_time is not None:
             time.sleep(sleep_time)
         else:
@@ -325,6 +330,7 @@ class SahibindenParser:
         logger.debug("get search url: {}", url)
         self.driver.get(url)
         while True:
+            stop_parsing = False
             self._random_sleep(1)
             source = self.driver.page_source
             soup = BeautifulSoup(source, 'lxml')
@@ -337,8 +343,11 @@ class SahibindenParser:
             for post in posts:
                 try:
                     post_id = post.get('data-id')
+                    # if not post_id:
+                    #     continue
                     if self._skip_post(url, post_id):
-                        continue
+                        stop_parsing = True
+                        break
                     try:
                         post_url = 'https://www.sahibinden.com' + post.find('a').get('href')
                     except AttributeError:
@@ -347,7 +356,7 @@ class SahibindenParser:
                     town = post.find('td', {'class': 'searchResultsLocationValue'}).getText(strip=True,
                                                                                             separator=' ').strip()
                     price = post.find('div', {'class': 'classified-price-container'}).getText(strip=True).split(' ')[0]
-                    price = float(price.replace(',', '').strip())
+                    price = float(price.replace(',', '').replace('TL', '').strip())
                     created = post.find('td', {'class': 'searchResultsDateValue'}).getText(strip=True)
                     created = parse(created)
                     context = dict(
@@ -363,6 +372,8 @@ class SahibindenParser:
                 except Exception as e:
                     traceback.print_exc()
             if first_pars:
+                break
+            if stop_parsing:
                 break
             last_page = soup.find('ul', {'class': 'pageNaviButtons'}).find_all('a')[-1]
             # next_page = None
@@ -388,14 +399,17 @@ class SahibindenParser:
 
             alert = Alert.select().first()
             if alert:
-                if alert.message == AlertMessage.need_cookies:
-                    already_log = False
-                # print('alert')
-                logger.warning(f'alert: {alert.message}')
-                self.driver.get('chrome://new-tab-page/')
-                logger.debug(f'sleep {PARSER_SLEEP_INTERVAL_SECONDS} s')
-                time.sleep(PARSER_SLEEP_INTERVAL_SECONDS)
-                continue
+                if alert.message == AlertMessage.block_ip:
+                    Alert.delete().execute()
+                else:
+                    if alert.message == AlertMessage.need_cookies:
+                        already_log = False
+                    # print('alert')
+                    logger.warning(f'alert: {alert.message}')
+                    self.driver.get('chrome://new-tab-page/')
+                    logger.debug(f'sleep {PARSER_SLEEP_INTERVAL_SECONDS} s')
+                    time.sleep(PARSER_SLEEP_INTERVAL_SECONDS)
+                    continue
             if not already_log:
                 login_result = self.login()
             else:
@@ -429,10 +443,12 @@ class SahibindenParser:
                         self.parser(context)
                     except Exception as ex:
                         logger.exception(ex)
-                        # error_text = self._processing_error()
+                        error_text = self._processing_error()
+                        if error_text == AlertMessage.block_ip:
+                            self._random_sleep('long')
 
                     # time.sleep(1000)
-                    Parser.update(first_run=False).where(Parser.url == url).execute()
+                    Parser.update(first_pars=False).where(Parser.url == url).execute()
             self.driver.get('chrome://new-tab-page/')
             logger.debug(f'sleep {PARSER_SLEEP_INTERVAL_SECONDS} s')
             time.sleep(PARSER_SLEEP_INTERVAL_SECONDS)

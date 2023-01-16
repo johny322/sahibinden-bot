@@ -209,7 +209,7 @@ async def set_cookies_handler(message: types.Message, state: FSMContext):
         return
     with open(cookies_path, 'w', encoding='utf-8') as f:
         json.dump(cookies, f, ensure_ascii=False, indent=4)
-    await Alert.delete().where(Alert.message == AlertMessage.need_cookies).execute()
+    Alert.delete().where(Alert.message == AlertMessage.need_cookies).execute()
     await message.answer('Куки сохранены')
 
 

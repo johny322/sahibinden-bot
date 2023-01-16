@@ -172,7 +172,7 @@ def clear_last_posts():
 
 def append_scheduler_job():
     scheduler.add_job(sahibinden_parser, 'date', run_date=datetime.now())
-    scheduler.add_job(send_post_messages, 'interval', seconds=PARSER_SLEEP_INTERVAL_SECONDS, run_date=datetime.now())
+    scheduler.add_job(send_post_messages, 'interval', seconds=PARSER_SLEEP_INTERVAL_SECONDS)
     scheduler.add_job(send_error_alert, 'interval', seconds=PARSER_SLEEP_INTERVAL_SECONDS)
     scheduler.add_job(clear_last_posts, 'interval', hours=START_DB_CLEAN_INTERVAL)
     logger.debug('added jobs')
