@@ -180,7 +180,7 @@ class SahibindenParser:
             self._random_sleep()
         except AttributeError:
             seller_rating = None
-            seller_reviews_count = None
+            seller_reviews_count = 0
 
         if not seller_posts_url.startswith('http'):
             seller_posts_url = 'https://www.sahibinden.com' + seller_posts_url
