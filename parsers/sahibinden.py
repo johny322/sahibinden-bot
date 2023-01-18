@@ -261,11 +261,11 @@ class SahibindenParser:
         if max_posts is not None:
             if post.seller_posts > max_posts:
                 check = False
-        if max_posts is not None:
-            if post.seller_posts > max_posts:
-                check = False
         if max_reviews is not None:
-            if post.seller_reviews > max_reviews:
+            if post.seller_reviews is not None:
+                if post.seller_reviews > max_reviews:
+                    check = False
+            else:
                 check = False
         if check:
             ParserBanned.create(
@@ -369,8 +369,9 @@ class SahibindenParser:
                     post = self.fetch_post(post_url, context)
                     # print(post)
                     self._add_post(post, url)
-                except Exception as e:
-                    traceback.print_exc()
+                except Exception as ex:
+                    # traceback.print_exc()
+                    logger.exception(ex)
             if first_pars:
                 break
             if stop_parsing:
