@@ -27,7 +27,7 @@ class User(BaseModel):
     user_id = IntegerField(unique=True)
     full_name = CharField()
     username = CharField(null=True)
-    log_config = CharField(default="cfg_1_1_1_1_0_0_0_1_0_1_1_1_1")
+    log_config = CharField(default="cfg_1_1_1_1_0_0_0_1_0_1")
     other_banned = BooleanField(default=False)
     black_words = BooleanField(default=False)
 

@@ -1,23 +1,17 @@
 import re
-import traceback
 import urllib
 from asyncio import sleep
 
 from aiogram import Router, types
 from aiogram.dispatcher.fsm.context import FSMContext
 from aiogram.exceptions import TelegramBadRequest
-from aiogram.types import BufferedInputFile
 from aiohttp import ClientConnectorError, ClientHttpProxyError, ClientProxyConnectionError
 from asyncstdlib import zip_longest
+from dateutil.parser import parse
 from loguru import logger
 
-from data.constants import MAX_COUNT
-from models import BlackWord, BazosText, User, get_datetime_now, \
-    BazosPreset, BazosBanned
-from dateutil.parser import parse
-from config import config
 from data import texts
-from data.states import Bazos, BazosTextG
+from data.constants import MAX_COUNT
 from data.keyboards import (
     get_presets_markup, get_post_date_markup,
     start_parse_markup, cancel_markup, get_back_parsing_markup,
@@ -25,9 +19,11 @@ from data.keyboards import (
     texts_markup, back_texts_markup, count_markup,
     get_price_markup, no_count_markup, bazos_keyboard, parse_skip_tops_markup
 )
+from data.states import Bazos, BazosTextG
 from log import decode_log_config
+from models import BlackWord, BazosText, User, get_datetime_now, \
+    BazosPreset, BazosBanned
 from parsers.bazos import bazos_parse
-from utils.exel_worker import Excel
 
 countries = {
     'sk': {
@@ -432,9 +428,6 @@ async def bazos_run_parsing(message: types.Message, state: FSMContext):
                         skip_max_views += 1
                         continue
 
-                if log.only_with_phone and not post.phone:
-                    skip_only_phone += 1
-                    continue
                 word_ban = False
                 for word in post.title.split():
                     try:
@@ -618,7 +611,7 @@ async def bazos_run_preset(query: types.CallbackQuery, state: FSMContext):
 
 @router.message(Bazos.preset_token)
 async def bazos_preset_token(message: types.Message, state: FSMContext):
-    await state.update_data(token=message.text)
+    await state.update_data(token=message.text.split('\n'))
     await state.set_state(Bazos.preset_proxy)
     await message.answer(
         text=texts.parse_proxy,

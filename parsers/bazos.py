@@ -170,7 +170,7 @@ async def fetch_post(url, proxy, tokens: list = None) -> Post:
 async def bazos_parse(url, proxy, skip_tops: bool, token: list = None, page_sleep: int = 1):
     start_url = url
     page_id = 1
-    print(proxy)
+    print(f'{proxy=}')
     domain = f'https://{urllib_parse.urlsplit(url).netloc}'
     try_count = 3
     while try_count > 0:
@@ -182,7 +182,7 @@ async def bazos_parse(url, proxy, skip_tops: bool, token: list = None, page_slee
                         proxy=proxy
                 ) as resp:
                     html = await resp.text()
-                    print(resp.url)
+                    print(f"{resp.url=}")
                     # print("html", resp)
                     # write_file('parsers/source/bazos_cz.html', html)
                 soup = BeautifulSoup(html, "lxml")

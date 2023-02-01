@@ -43,21 +43,8 @@ async def welcome_handler(message: types.Message):
             await message.answer(
                 text=texts.new_config_log
             )
-        if ref:
-            if ref.user_id == message.from_user.id:
-                await message.answer(
-                    text=texts.cannot_self_ref
-                )
-            else:
-                user.referal_id = ref.user_id
-                user.save()
-                await message.answer(
-                    text=texts.you_ref.format(
-                        ref_name=f"@{ref.username}" if ref.username else ref.full_name
-                    )
-                )
     except User.DoesNotExist:
-        log_config = "cfg_1_1_1_1_1_1_1_1_1_1_1_1"
+        log_config = "cfg_1_1_1_1_1_1_1_1_1_1"
         if new_log is not None:
             log_config = encode_log_config(new_log)
         User.create(
