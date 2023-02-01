@@ -104,3 +104,11 @@ async def back_parse(query: types.CallbackQuery, state: FSMContext):
 @router.message(Text(text_contains="в главное меню", text_ignore_case=True))
 async def go_main_menu(message: types.Message):
     await welcome_handler(message)
+
+
+@router.message(Text(text_contains="начать парсинг", text_ignore_case=True))
+async def start_parse(message: types.Message):
+    await message.answer(
+        text=texts.choose_parser,
+        reply_markup=parsers_markup
+    )

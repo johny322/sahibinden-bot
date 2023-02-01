@@ -114,6 +114,47 @@ class Alert(BaseModel):
         db_table = "alerts"
 
 
+class EmailConfirm(BaseModel):
+    email_code = CharField()
+
+    class Meta:
+        db_table = "email_confirm"
+
+
+class BazosText(BaseModel):
+    owner = ForeignKeyField(User)
+    name = CharField()
+    text = TextField(default="Hi")
+    country = CharField()
+
+    class Meta:
+        db_table = "bazos_texts"
+
+
+class BazosPreset(BaseModel):
+    owner = ForeignKeyField(User)
+    name = CharField()
+    country = CharField()
+    query = CharField()
+    post_date = DateTimeField(null=True)
+    max_posts = IntegerField(null=True)
+    max_views = IntegerField(null=True)
+    skip_tops = BooleanField()
+    price_s = IntegerField()
+    price_e = IntegerField()
+
+    class Meta:
+        db_table = "bazos_presets"
+
+
+class BazosBanned(BaseModel):
+    owner = ForeignKeyField(User)
+    seller_url = CharField()
+
+    class Meta:
+        db_table = "bazos_bans"
+
+
 db.create_tables([
     User, BlackWord,
     Parser,
@@ -121,6 +162,10 @@ db.create_tables([
     ParserBanned,
     Post,
     Alert,
+    EmailConfirm,
+    BazosText,
+    BazosPreset,
+    BazosBanned
 ])
 
 ALL_BANNED = [

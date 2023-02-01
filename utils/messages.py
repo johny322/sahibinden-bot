@@ -62,6 +62,11 @@ async def send_error_alert():
             user_id,
             text='Куки устарели. Отправьте файл с куки'
         )
+    elif error_text == AlertMessage.email_code:
+        await bot.send_message(
+            user_id,
+            text='Отправьте код с почты'
+        )
     else:
         await bot.send_message(
             user_id,

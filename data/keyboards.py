@@ -7,8 +7,16 @@ from log import LogModel, encode_log_config
 from models import get_datetime_now
 from data.texts import config_share
 
+# menu_markup = ReplyKeyboardMarkup(keyboard=[
+#     [KeyboardButton(text="👨‍💻 Добавить ссылки")],
+#     [
+#         KeyboardButton(text="⚙️ Настройки"),
+#         KeyboardButton(text="🛠️ Инструменты")
+#     ],
+#     [KeyboardButton(text="❓ Помощь")],
+# ], resize_keyboard=True)
 menu_markup = ReplyKeyboardMarkup(keyboard=[
-    [KeyboardButton(text="👨‍💻 Добавить ссылки")],
+    [KeyboardButton(text="👨‍💻 Начать парсинг")],
     [
         KeyboardButton(text="⚙️ Настройки"),
         KeyboardButton(text="🛠️ Инструменты")
@@ -35,9 +43,10 @@ tools_markup = ReplyKeyboardMarkup(keyboard=[
 parsers_markup = InlineKeyboardMarkup(inline_keyboard=[
     [
         InlineKeyboardButton(
-            text='🇨🇿 SAKARYATEKNOLOJI.COM',
-            callback_data="sakaryateknoloji:start"
+            text='BAZOS >>',
+            callback_data="bazos_show"
         ),
+        InlineKeyboardButton(text="🇸🇰 bazos.sk", callback_data="bazos_start:sk")
     ],
 ])
 
@@ -392,6 +401,48 @@ def get_back_parsing_markup(parser: str, payload: str = "") -> InlineKeyboardMar
         )]
     ])
 
+
+def get_presets_markup(parser: str, presets: Optional[dict] = None, payload: str = "") -> InlineKeyboardMarkup:
+    if payload:
+        payload = ":" + payload
+    btns = []
+    if presets:
+        for key, val in presets.items():
+            btns.append([InlineKeyboardButton(
+                text=f"📁 {key}",
+                callback_data=parser + f"_run_preset:{val}" + payload
+            )])
+    return InlineKeyboardMarkup(inline_keyboard=[
+        *btns,
+        [InlineKeyboardButton(
+            text="Удалить определенный пресет",
+            callback_data=parser + "_del_preset" + payload
+        )],
+        [InlineKeyboardButton(
+            text="Удалить все пресеты",
+            callback_data=parser + "_del_presets" + payload
+        )],
+        [InlineKeyboardButton(
+            text="<<",
+            callback_data=parser + "_start" + payload
+        )]
+    ])
+
+
+parse_skip_tops_markup = ReplyKeyboardMarkup(keyboard=[
+    [KeyboardButton(text="yes")],
+    [KeyboardButton(text="no")],
+    [cancel_btn]
+], resize_keyboard=True)
+
+bazos_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+    [
+        InlineKeyboardButton(text="🇸🇰 bazos.sk", callback_data="bazos_start:sk"),
+    ],
+    [
+        InlineKeyboardButton(text="<<", callback_data="parse"),
+    ],
+])
 
 count_markup = ReplyKeyboardMarkup(keyboard=[
     [

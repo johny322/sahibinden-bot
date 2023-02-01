@@ -14,12 +14,14 @@ from loguru import logger
 from pydantic import BaseModel, HttpUrl
 from pyvirtualdisplay import Display
 from selenium.common import TimeoutException
+from selenium.webdriver import ActionChains, Keys
+from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 
 from config import scheduler
 from data.constants import PARSER_SLEEP_INTERVAL_SECONDS, START_DB_CLEAN_INTERVAL
-from models import Parser, Post, ParserFirstBanned, Alert, User, ParserBanned, get_datetime_now
+from models import Parser, Post, ParserFirstBanned, Alert, User, ParserBanned, get_datetime_now, EmailConfirm
 from parsers.all import get_proxy
 from parsers.extra import create_proxy_plugin
 
@@ -30,6 +32,7 @@ class AlertMessage:
     need_cookies = 'need_cookies'
     other_error = 'other_error'
     block_ip = 'block_ip'
+    email_code = 'email_code'
 
 
 class NoProxyError(Exception):
@@ -213,6 +216,12 @@ class SahibindenParser:
             return error_text
 
         soup = BeautifulSoup(self.driver.page_source, 'lxml')
+        # //input[@autocomplete="new-password"]
+        input_element = soup.find('input', {'autocomplete': 'new-password'})
+        if input_element:
+            error_text = AlertMessage.email_code
+            self._append_error_alert(error_text)
+            return error_text
         try:
             title = soup.find('title').getText()
         except AttributeError:
@@ -324,6 +333,29 @@ class SahibindenParser:
         else:
             time.sleep(random.uniform(0.5, 2))
 
+    def _confirm_email_code(self):
+        email_confirm = EmailConfirm.select()
+        if not email_confirm:
+            return
+        current_url = self.driver.current_url
+        if 'sahibinden' not in current_url:
+            self.driver.back()
+        self._random_sleep()
+        current_url = self.driver.current_url
+        email_code = email_confirm[-1].email_code
+        input_element = self.driver.find_element(By.XPATH, '//input[@autocomplete="new-password"]')
+        ActionChains(self.driver).send_keys_to_element(
+            input_element, email_code
+        ).pause(random.uniform(0.2, 0.9)).send_keys_to_element(input_element, Keys.ENTER).perform()
+        EmailConfirm.delete().execute()
+        try:
+            WebDriverWait(self.driver, 5, 0.2).until(
+                EC.url_changes(current_url)
+            )
+            return True
+        except TimeoutException:
+            return False
+
     def parser(self, context: dict):
         url = context['url']
         first_pars = context.get('first_pars', False)
@@ -402,6 +434,11 @@ class SahibindenParser:
             if alert:
                 if alert.message == AlertMessage.block_ip:
                     Alert.delete().execute()
+                elif alert.message == AlertMessage.email_code:
+                    good_confirm = self._confirm_email_code()
+                    if not good_confirm:
+                        self._processing_error(AlertMessage.email_code)
+                        continue
                 else:
                     if alert.message == AlertMessage.need_cookies:
                         already_log = False
@@ -445,6 +482,8 @@ class SahibindenParser:
                     except Exception as ex:
                         logger.exception(ex)
                         error_text = self._processing_error()
+                        if error_text == AlertMessage.email_code:
+                            good_confirm = self._confirm_email_code()
                         if error_text == AlertMessage.block_ip:
                             self._random_sleep('long')
 

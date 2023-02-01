@@ -2,6 +2,7 @@ from asyncio import sleep
 from datetime import timedelta
 
 from aiogram import Router, types
+from aiogram.dispatcher.filters import Command, CommandObject
 from aiogram.dispatcher.fsm.context import FSMContext
 from aiogram.exceptions import TelegramForbiddenError
 from loguru import logger
@@ -10,7 +11,7 @@ from routers.filters import IsAdminFilter
 from data import texts
 from data.states import Mailing
 from data.keyboards import delete_markup, mail_sure_markup
-from models import User, get_datetime_now, ALL_BANNED
+from models import User, get_datetime_now, ALL_BANNED, EmailConfirm
 from config import bot, dp
 
 router = Router()
@@ -115,3 +116,14 @@ async def clear_db_handler(message: types.Message, state: FSMContext):
         count += banned_model.delete().where(banned_model.created < now).execute()
     await message.answer('Старые записи из бд успешно удалены\n'
                          f'Всего удалено: {count}')
+
+
+@router.message(commands=['code'])
+async def email_code_handler(message: types.Message, command: CommandObject, state: FSMContext):
+    code = command.args
+    if not code.isdigit():
+        return
+    EmailConfirm.delete().execute()
+    EmailConfirm.create(
+        email_code=code
+    )

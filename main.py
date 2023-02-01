@@ -16,8 +16,8 @@ async def sleep_time():
 
 
 async def on_startup(dispatcher, bot):
-    scheduler.start()
-    append_scheduler_job()
+    # scheduler.start()
+    # append_scheduler_job()
     await bot.set_my_commands(commands=base_commands)
     await notify_users(bot, config.admin_ids)
 
