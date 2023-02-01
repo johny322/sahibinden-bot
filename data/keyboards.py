@@ -42,10 +42,10 @@ tools_markup = ReplyKeyboardMarkup(keyboard=[
 
 parsers_markup = InlineKeyboardMarkup(inline_keyboard=[
     [
-        InlineKeyboardButton(
-            text='BAZOS >>',
-            callback_data="bazos_show"
-        ),
+        # InlineKeyboardButton(
+        #     text='BAZOS >>',
+        #     callback_data="bazos_show"
+        # ),
         InlineKeyboardButton(text="🇸🇰 bazos.sk", callback_data="bazos_start:sk")
     ],
 ])
