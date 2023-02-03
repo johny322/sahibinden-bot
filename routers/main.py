@@ -2,11 +2,12 @@ from aiogram import Router, types
 from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.fsm.context import FSMContext
 
-from models import User
-from log import decode_log_config, encode_log_config
 from data import texts
-from data.keyboards import menu_markup, parsers_markup, cancel_markup
-from routers.filters import IsAdminFilter
+from data.keyboards import menu_markup, parsers_markup
+from log import decode_log_config, encode_log_config
+from models import User
+
+# from routers.filters import IsAdminFilter
 
 router = Router()
 
@@ -17,7 +18,7 @@ async def delete_handler(query: types.CallbackQuery, state: FSMContext):
     await state.clear()
 
 
-@router.message(IsAdminFilter(), commands={"start"})
+@router.message(commands={"start"})
 async def welcome_handler(message: types.Message):
     payload = message.text.split()
     ref_id = None
